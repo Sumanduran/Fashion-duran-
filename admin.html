@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FashionHub | Admin Dashboard</title>
+<style>
+body {font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:20px;}
+header {display:flex; justify-content:space-between; align-items:center; background:#222; color:white; padding:15px 30px; border-radius:5px;}
+h1 {margin:0;}
+button {background:#007bff; color:white; border:none; padding:8px 12px; border-radius:5px; cursor:pointer;}
+button:hover {background:#0056b3;}
+#logoutBtn {background:#d9534f;}
+#logoutBtn:hover {background:#c9302c;}
+table {width:100%; border-collapse:collapse; margin-top:20px;}
+th, td {border:1px solid #ddd; padding:10px; text-align:center;}
+th {background:#222; color:white;}
+tr:nth-child(even){background:#f9f9f9;}
+.completed {background:#d4edda;}
+.summary {margin-top:20px; background:#fff; padding:15px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.1);}
+.summary p {margin:8px 0;}
+.if{
+  text-shadow: 5px 6px 4px #009688;
+  font-size: 30px;
+  font-style: italic;
+ padding-top: 50px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>👔 FashionHub Admin Dashboard</h1>
+  <button id="logoutBtn">Logout</button>
+</header>
+
+<div class="summary">
+  <h2>📊 Sales Summary</h2>
+  <p>Total Orders: <span id="totalOrders">0</span></p>
+  <p>Pending Orders: <span id="pendingOrders">0</span></p>
+  <p>Completed Orders: <span id="completedOrders">0</span></p>
+  <p>Total Sales: ₱<span id="totalSales">0</span></p>
+  <p id="canceledOrdersSummary" style="color:red;">Canceled Orders: 0</p>
+  <button onclick="clearAll()">🧹 Clear All Orders</button>
+</div>
+
+<h2>🛒 Customer Orders</h2>
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Product</th>
+      <th>Price</th>
+      <th>Date</th>
+      <th>Payment</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="ordersTable"></tbody>
+</table>
+
+<h2>❌ Canceled Orders</h2>
+<table>
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Product</th>
+      <th>Price</th>
+      <th>Date Ordered</th>
+      <th>Canceled At</th>
+      <th>Payment</th>
+    </tr>
+  </thead>
+  <tbody id="canceledOrdersTable"></tbody>
+</table>
+  
+
+<a href="index.html" class="if">Back to my admins</a>
+
+<script>
+// Check admin login
+if (localStorage.getItem("adminLoggedIn") !== "true") {
+  alert("Please log in as admin first!");
+  window.location.href = "admin_login..html";
+}
+
+let orders = JSON.parse(localStorage.getItem('orders')) || [];
+let canceledOrders = JSON.parse(localStorage.getItem('canceledOrders')) || [];
+
+// =======================
+// RENDER ORDERS & SUMMARY
+// =======================
+function renderOrders() {
+  const table = document.getElementById('ordersTable');
+  const totalOrders = document.getElementById('totalOrders');
+  const pendingOrders = document.getElementById('pendingOrders');
+  const completedOrders = document.getElementById('completedOrders');
+  const totalSales = document.getElementById('totalSales');
+  const canceledSummary = document.getElementById('canceledOrdersSummary');
+
+  table.innerHTML = '';
+  if (orders.length === 0) {
+    table.innerHTML = `<tr><td colspan="7">No orders yet.</td></tr>`;
+    totalOrders.textContent = pendingOrders.textContent = completedOrders.textContent = totalSales.textContent = canceledSummary.textContent = 0;
+    return;
+  }
+
+  let total = 0, pending = 0, completed = 0, canceled = 0;
+
+  orders.forEach((o, i) => {
+    if (o.canceled) {
+      canceled++;
+      return; // skip canceled in main table
+    }
+
+    const tr = document.createElement('tr');
+    if (o.completed) tr.classList.add('completed');
+
+    let paymentInfo = o.paymentMethod || 'N/A';
+    if (o.paymentMethod === 'Gcash' && o.gcashNumber) paymentInfo += ` (${o.gcashNumber})`;
+
+    tr.innerHTML = `
+      <td>${o.user}</td>
+      <td>${o.name}</td>
+      <td>₱${o.price}</td>
+      <td>${o.date}</td>
+      <td>${paymentInfo}</td>
+      <td>${o.completed ? '✅ Completed' : '❌ Pending'}</td>
+      <td>
+        <button onclick="markCompleted(${i})">Mark Completed</button>
+        <button onclick="deleteOrder(${i})" style="background:#dc3545;">Delete</button>
+      </td>`;
+    table.appendChild(tr);
+
+    total += o.price;
+    if (o.completed) completed++; else pending++;
+  });
+
+  // Update summary
+  totalOrders.textContent = orders.length;
+  pendingOrders.textContent = pending;
+  completedOrders.textContent = completed;
+  totalSales.textContent = total;
+  canceledSummary.textContent = `Canceled Orders: ${canceled}`;
+}
+
+// =======================
+// RENDER CANCELED ORDERS TABLE
+// =======================
+function renderCanceledOrders() {
+  const tbody = document.getElementById("canceledOrdersTable");
+  tbody.innerHTML = '';
+
+  if (canceledOrders.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6">No canceled orders.</td></tr>`;
+    return;
+  }
+
+  canceledOrders.forEach(o => {
+    const tr = document.createElement("tr");
+
+    let paymentInfo = o.paymentMethod || "N/A";
+    if (o.paymentMethod === "Gcash" && o.gcashNumber) paymentInfo += ` (${o.gcashNumber})`;
+
+    tr.innerHTML = `
+      <td>${o.user}</td>
+      <td>${o.name}</td>
+      <td>₱${o.price}</td>
+      <td>${o.date}</td>
+      <td>${o.canceledAt}</td>
+      <td>${paymentInfo}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+// =======================
+// ADMIN ACTIONS
+// =======================
+function markCompleted(i) {
+  orders[i].completed = true;
+  localStorage.setItem('orders', JSON.stringify(orders));
+  renderOrders();
+  alert('Order marked as completed!');
+}
+
+function deleteOrder(i) {
+  if (!confirm('Delete this order?')) return;
+  orders.splice(i, 1);
+  localStorage.setItem('orders', JSON.stringify(orders));
+  renderOrders();
+  renderCanceledOrders();
+}
+
+function clearAll() {
+  if (!confirm('Clear all orders?')) return;
+  orders = [];
+  canceledOrders = [];
+  localStorage.setItem('orders', JSON.stringify(orders));
+  localStorage.setItem('canceledOrders', JSON.stringify(canceledOrders));
+  renderOrders();
+  renderCanceledOrders();
+}
+
+// =======================
+// LOGOUT
+// =======================
+document.getElementById('logoutBtn').onclick = () => {
+  localStorage.removeItem('adminLoggedIn');
+  window.location.href = 'index.html';
+};
+
+// =======================
+// INITIAL RENDER
+// =======================
+renderOrders();
+renderCanceledOrders();
+</script>
+
+</body>
+</html>
