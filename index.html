@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HTML Presentation</title>
+  <style>
+     body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #ff9a9e, #fad0c4);
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #000;
+      font-size: 4em;
+      margin-top: 200px;
+      animation: bounce 2s infinite;
+      text-shadow: 10px 9px 10px;
+    }
+
+    p {
+      color: #fff;
+      font-size: 1.5em;
+      margin-top: 20px;
+    }
+
+    @keyframes bounce {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-20px);
+      }
+    }
+
+    .balloon {
+      position: absolute;
+      bottom: -150px;
+      width: 50px;
+      height: 70px;
+      background-color: red;
+      border-radius: 0 0 25px 25px;
+      animation: float 6s ease-in infinite;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-110vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+   
+  a{ font-size:24px;
+    
+  }
+  </style>
+</head>
+<body>
+
+  <!-- Slides -->
+  <div class="slide active" id="slide1">
+    <h1>Welcome to My Presentation</h1>
+    
+  </div>
+  <a href="well..html">Click this website Fashionhubduran</a>
+  
+  <!-- Balloons (optional fun effect) -->
+  <div class="balloon" style="left: 20%; background-color: #ff6666;"></div>
+  <div class="balloon" style="left: 40%; background-color: #ffcc66;"></div>
+  <div class="balloon" style="left: 60%; background-color: #66ffcc;"></div>
+  <div class="balloon" style="left: 80%; background-color: #66ccff;"></div>
+
+  <!-- Optional: Confetti effect -->
+  <canvas id="confetti"></canvas>
+
+<script>
+    // Confetti script
+    const canvas = document.getElementById('confetti');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let confetti = [];
+
+    for (let i = 0; i < 150; i++) {
+      confetti.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 6 + 4,
+        d: Math.random() * 5 + 1,
+        color: `hsl(${Math.random() * 360}, 100%, 70%)`
+      });
+    }
+
+    function drawConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < confetti.length; i++) {
+        let c = confetti[i];
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2, false);
+        ctx.fillStyle = c.color;
+        ctx.fill();
+        c.y += c.d;
+        if (c.y > canvas.height) {
+          c.y = -10;
+          c.x = Math.random() * canvas.width;
+        }
+      }
+      requestAnimationFrame(drawConfetti);
+    }
+
+    drawConfetti();
+  </script>
+</body>
+</html>
